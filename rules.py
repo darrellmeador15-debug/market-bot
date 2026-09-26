@@ -1,3 +1,8 @@
+SIGNAL_COLORS = {
+    "SELL": "RED",
+    "HOLD": "GREEN",
+    "BUY": "YELLOW",
+    "SHORT_SELL": "ORANGE",     
 from config import (
     STOP_LOSS_PERCENT,
     PARTIAL_PROFIT_PERCENT,
