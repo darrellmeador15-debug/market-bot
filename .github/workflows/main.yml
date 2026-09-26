@@ -21,11 +21,13 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Test Python files
-        run: python -m py_compile config.py scanner.py strategy.py backtest.py main.py
+        run: python -m py_compile config.py scanner.py strategy.py backtest.py main.py data_loader.py rules.py candle_rules.py run_backtest.py schwab_client.py
 
-            - name: Check Schwab secrets
+      - name: Run Market Bot
+        run: python main.py
+
+      - name: Check Schwab secrets
         env:
           SCHWAB_CLIENT_ID: ${{ secrets.SCHWAB_CLIENT_ID }}
           SCHWAB_CLIENT_SECRET: ${{ secrets.SCHWAB_CLIENT_SECRET }}
         run: python -c "from schwab_client import credentials_available; print('Schwab credentials loaded:', credentials_available())"
-    
