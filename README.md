@@ -35,3 +35,28 @@ The tests cover simulated buying and selling, stop/target exits, cash accounting
 - Exclude China/Hong Kong listings when reliable country data is available; unknown country data must not silently pass the exclusion filter.
 - Test the user's preferred 6:00 a.m.–12:00 p.m. and 3:00–6:00 p.m. Eastern windows, with special attention to 6:00–9:00 a.m.
 - Evaluate 7-, 15-, and 30-day results with trade count, win rate, average win/loss, realized P&L, drawdown, and realistic slippage/fees before considering live execution.
+
+## Four-stage development and continuous learning plan
+
+The bot's intended lifecycle is:
+
+1. **Build and observe (initial target: 3 weeks):** connect an approved market-data source, scan the configured stock universe, simulate long-only entries/exits, and record every signal. Three weeks is a checkpoint, not a promise of readiness.
+2. **Validate (typically several additional weeks):** test on unseen historical periods, include realistic fees/slippage, assess drawdown and losing streaks, and publish 7-, 15-, and 30-day scorecards. Do not rely on win rate alone.
+3. **Thinkorswim paperMoney (after a separate integration/feasibility check):** test signals and order-management workflow in the platform's simulated environment. Direct API access to paperMoney is not assumed or promised. Keep testing for at least 4–8 weeks as a starting guideline, and longer if trade count or market conditions are insufficient.
+4. **Real money only after explicit approval:** require stable out-of-sample results, adequate trade count, risk-limit checks, a kill switch, and verified broker order behavior. Start with small exposure. Passing software tests alone never authorizes live trading.
+
+### Trade memory, strategy analysis, and controlled improvement
+
+- `learning_system.py` adds persistent JSON Lines trade-event memory, summary metrics, setup-group comparisons, and a review report.
+- `learning_system_test.py` checks storage, metrics, setup comparisons, insufficient-data status, and safety defaults.
+- Record setup/catalyst and market-regime tags when available, so results can be compared across trending, choppy, and declining markets.
+- The review system **does not automatically rewrite or promote trading rules**. Proposed changes must be tested against data not used to create them and approved by a human before promotion.
+- The learning system can keep reviewing results after deployment, but it only runs when the bot is running and has access to its saved memory. GitHub Actions is for testing, not a continuous live-market process; persistent runtime/storage and a verified data feed remain to be configured.
+- Daily market conditions can be classified and reviewed, but the bot must not assume that yesterday's best strategy is today's best strategy. Keep live settings fixed unless a reviewed change passes validation.
+- No system can promise 100% completion, constant improvement, or profits. Continuous evaluation is the goal; safe, measured changes matter more than changing rules every day.
+
+Run the learning-system tests with:
+
+```bash
+python learning_system_test.py
+```
