@@ -1,6 +1,9 @@
 """Local long-only paper simulator. This module never sends broker orders."""
 from dataclasses import dataclass, asdict
 from typing import Optional
+from pathlib import Path
+
+from learning_system import DEFAULT_MEMORY_PATH, record_event
 
 
 @dataclass
@@ -21,7 +24,7 @@ class PaperTrader:
     """
 
     def __init__(self, starting_cash=10_000.0, stop_loss_percent=5.0,
-                 profit_target_percent=15.0, max_position_fraction=0.20):
+                 profit_target_percent=15.0, max_position_fraction=0.20,\n                 memory_path=DEFAULT_MEMORY_PATH):
         if starting_cash <= 0:
             raise ValueError("starting_cash must be greater than zero")
         if not 0 < stop_loss_percent < 100:
