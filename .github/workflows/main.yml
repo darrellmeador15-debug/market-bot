@@ -21,7 +21,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Compile Python files
-        run: python -m py_compile dashboard.py config.py scanner.py strategy.py backtest.py main.py data_loader.py rules.py candle_rules.py candle_test.py strategy_test.py run_backtest.py schwab_client.py paper_trader.py paper_trader_test.py learning_system.py learning_system_test.py data_quality.py data_quality_test.py
+        run: python -m py_compile dashboard.py config.py scanner.py strategy.py backtest.py main.py data_loader.py rules.py candle_rules.py candle_test.py strategy_test.py run_backtest.py schwab_client.py paper_trader.py paper_trader_test.py learning_system.py learning_system_test.py data_quality.py data_quality_test.py latency_monitor.py latency_monitor_test.py
 
       - name: Run candle rule tests
         run: python candle_test.py
@@ -37,6 +37,9 @@ jobs:
 
       - name: Run data-quality safeguard tests
         run: python data_quality_test.py
+
+      - name: Run latency measurement tests
+        run: python latency_monitor_test.py
 
       - name: Run Market Bot
         run: python main.py
