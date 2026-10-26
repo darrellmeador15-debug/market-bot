@@ -41,7 +41,7 @@ with col_status:
     st.metric("Price filter", f"${MIN_PRICE:.2f}–${MAX_PRICE:.2f}")
 symbols = list(dict.fromkeys(s.strip().upper() for s in raw_symbols.split(",") if s.strip()))
 now = datetime.now(ZoneInfo("America/New_York"))
-st.caption(f"Eastern time: {now:%Y-%m-%d %I:%M:%S %p %Z}  |  Min traded volume: {MIN_LIQUIDITY:,}  |  China/HK listings excluded when country metadata is available.")
+st.caption(f"Eastern time: {now:%Y-%m-%d %I:%M:%S %p %Z}  |  Min traded volume: {MIN_LIQUIDITY:,}  |  China/HK excluded; unknown country is held for review.")
 
 @st.cache_data(ttl=45, show_spinner=False)
 def load_symbol(symbol):
@@ -58,6 +58,9 @@ def load_symbol(symbol):
     except Exception:
         pass
     return hist, info, news
+
+if refresh:
+    load_symbol.clear()
 
 rows, histories, all_news = [], {}, []
 progress = st.progress(0, text="Loading selected symbols…") if symbols else None
@@ -85,13 +88,17 @@ for i, symbol in enumerate(symbols):
         latest_vol = float(latest["Volume"])
         # Heuristic only: not an exchange halt prediction or official halt status.
         prehalt = abs(day_move_1m) >= 4 and vol_avg > 0 and latest_vol >= 3 * vol_avg
+        country_unknown = EXCLUDE_CHINA_STOCKS and country.upper() in {"UNKNOWN", "N/A", "NONE", ""}
         excluded = EXCLUDE_CHINA_STOCKS and country.upper() in {"CHINA", "CN", "HONG KONG", "HK"}
-        status = "EXCLUDED: China/HK" if excluded else ("PRE-HALT WATCH (heuristic)" if prehalt else "Monitoring")
+        status = ("EXCLUDED: China/HK" if excluded else
+                  "COUNTRY UNKNOWN: REVIEW" if country_unknown else
+                  "PRE-HALT WATCH (heuristic)" if prehalt else "Monitoring")
         rows.append({
             "Symbol": symbol, "Price": price, "Change %": change, "Volume": volume,
             "Float": float_shares, "Country": country, "Status": status,
             "Price OK": MIN_PRICE <= price <= MAX_PRICE,
             "Volume OK": volume >= MIN_LIQUIDITY,
+            "Country OK": not country_unknown and not excluded,
             "Momentum": "30%+" if change >= 30 else ("20%+" if change >= 20 else ("10%+" if change >= 10 else "—")),
             "1m move %": day_move_1m,
         })
@@ -114,7 +121,7 @@ else:
     if "Price OK" not in df: df["Price OK"] = False
     if "Volume OK" not in df: df["Volume OK"] = False
     if "Change %" not in df: df["Change %"] = None
-    qualified = df[df["Price OK"].fillna(False) & df["Volume OK"].fillna(False) & ~df["Status"].astype(str).str.startswith("EXCLUDED")].copy()
+    qualified = df[df["Price OK"].fillna(False) & df["Volume OK"].fillna(False) & df.get("Country OK", pd.Series(False, index=df.index)).fillna(False)].copy()
     g1, g2, g3, g4 = st.columns(4)
     g1.metric("Symbols monitored", len(symbols))
     g2.metric("Price + volume qualified", len(qualified))
