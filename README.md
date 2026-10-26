@@ -40,6 +40,20 @@ python paper_trader_test.py
 
 The tests cover simulated buying and selling, stop/target exits, cash accounting, duplicate-entry prevention, position limits, and long-only behavior. GitHub Actions runs these tests on pushes.
 
+## Latency measurement and free-data limits
+
+- `latency_monitor.py` measures the local time spent processing an event and producing a decision, with median, p95, p99, and maximum results.
+- This is **not** exchange-to-screen latency. True end-to-end delay requires a trustworthy provider event timestamp and a local receive timestamp; source coverage and timestamp semantics must be verified.
+- The requested 4–6 millisecond target is a goal to measure, not a guarantee. Free feeds may be delayed, incomplete, rate-limited, or limited to one exchange.
+- Before paper-trading signals are trusted, log source name, source timestamp, local receive time, alert time, missing/stale status, and symbol coverage. Never label a source real-time just because local processing is fast.
+- Free/open-source software can be excellent, but it cannot manufacture missing exchange data, official halt notices, Level 2/order flow, or a complete catalyst feed.
+
+Run the local latency utility tests with:
+
+```bash
+python latency_monitor_test.py
+```
+
 ## Data and broker connections still needed
 
 - A verified market-data source and approved credentials are needed before the bot can scan current live prices. The Schwab Trader API offers market-data features when the relevant API access is approved.
