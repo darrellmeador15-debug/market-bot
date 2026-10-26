@@ -5,6 +5,7 @@ process to the moment a signal decision is produced. It cannot measure how long
 a quote took to travel from an exchange/vendor to this process.
 """
 from dataclasses import dataclass
+from math import ceil
 from time import perf_counter_ns
 from typing import Callable, Iterable
 
@@ -40,7 +41,7 @@ def summarize_ms(samples: Iterable[float]) -> LatencySummary:
 
     def percentile(p: float) -> float:
         # Nearest-rank percentile: deterministic and easy to audit.
-        index = max(0, int((p * len(values) + 0.999999999)) - 1)
+        index = max(0, ceil(p * len(values)) - 1)
         return values[min(index, len(values) - 1)]
 
     n = len(values)
