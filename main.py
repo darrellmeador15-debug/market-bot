@@ -42,8 +42,8 @@ def analyze_stock(
 
 if __name__ == "__main__":
     print("Market Bot is ready for testing.")
-    print("Signals:")
-    print("SELL = RED")
-    print("HOLD = GREEN")
-    print("BUY = YELLOW")
-    print("SHORT SELL = ORANGE")
+    print("Candle colors:")
+    print("MOMENTUM = YELLOW")
+    print("BUY ENTRY = DARK_BLUE")
+    print("HOLD / NORMAL UP = GREEN")
+    print("SELL / DOWN = RED")
