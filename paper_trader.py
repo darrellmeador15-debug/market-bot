@@ -24,7 +24,8 @@ class PaperTrader:
     """
 
     def __init__(self, starting_cash=10_000.0, stop_loss_percent=5.0,
-                 profit_target_percent=15.0, max_position_fraction=0.20,\n                 memory_path=DEFAULT_MEMORY_PATH):
+                 profit_target_percent=15.0, max_position_fraction=0.20,
+                 memory_path=DEFAULT_MEMORY_PATH):
         if starting_cash <= 0:
             raise ValueError("starting_cash must be greater than zero")
         if not 0 < stop_loss_percent < 100:
@@ -41,6 +42,7 @@ class PaperTrader:
         self.position = None
         self.closed_trades = []
         self.ledger = []
+        self.memory_path = Path(memory_path) if memory_path is not None else None
 
     def buy(self, symbol, price, shares=None):
         if not isinstance(symbol, str) or not symbol.strip():
@@ -62,6 +64,8 @@ class PaperTrader:
         event = {"event": "BUY", "symbol": self.position.symbol, "shares": qty,
                  "price": float(price), "cash_after": round(self.cash, 2)}
         self.ledger.append(event)
+        if self.memory_path is not None:
+            record_event(event, self.memory_path)
         return {"status": "filled_simulated", **event}
 
     def update_price(self, price):
@@ -97,9 +101,12 @@ class PaperTrader:
         self.cash += trade.exit_price * trade.shares
         self.closed_trades.append(asdict(trade))
         event = {"event": "SELL", "symbol": trade.symbol, "shares": trade.shares,
-                 "price": trade.exit_price, "reason": trade.exit_reason,
-                 "pnl": trade.pnl, "cash_after": round(self.cash, 2)}
+                 "entry_price": trade.entry_price, "price": trade.exit_price,
+                 "reason": trade.exit_reason, "pnl": trade.pnl,
+                 "cash_after": round(self.cash, 2)}
         self.ledger.append(event)
+        if self.memory_path is not None:
+            record_event(event, self.memory_path)
         self.position = None
         return {"status": "filled_simulated", **event}
 
