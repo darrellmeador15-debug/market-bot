@@ -77,10 +77,20 @@ for i, symbol in enumerate(symbols):
         price = float(latest["Close"])
         prev_close = info.get("regularMarketPreviousClose") or info.get("previousClose")
         if not prev_close:
-            day = ticker_day = hist[hist.index.date == hist.index[-1].date()]
-            prev_close = float(day.iloc[0]["Open"]) if not day.empty else float(prior["Close"])
+            # Fall back to the prior daily close, not the first intraday open.
+            try:
+                daily = yf.Ticker(symbol).history(period="5d", interval="1d", auto_adjust=False)
+                if daily is not None and len(daily) >= 2:
+                    prev_close = float(daily["Close"].iloc[-2])
+            except Exception:
+                prev_close = None
+        if not prev_close:
+            prev_close = float(prior["Close"]) if len(hist) > 1 else price
         change = ((price / float(prev_close)) - 1) * 100 if prev_close else 0.0
-        volume = int(hist["Volume"].tail(390).sum())
+        # Sum only bars from the latest trading date; avoid adding several days of volume.
+        latest_date = hist.index[-1].date()
+        session_bars = hist[hist.index.date == latest_date]
+        volume = int(session_bars["Volume"].fillna(0).sum())
         country = info.get("country") or "Unknown"
         float_shares = info.get("floatShares")
         day_move_1m = ((price / float(prior["Close"])) - 1) * 100 if float(prior["Close"]) else 0
