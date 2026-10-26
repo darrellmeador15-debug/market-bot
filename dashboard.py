@@ -12,6 +12,7 @@ import streamlit as st
 import yfinance as yf
 
 from config import MIN_PRICE, MAX_PRICE, MIN_LIQUIDITY, EXCLUDE_CHINA_STOCKS
+from data_quality import check_bar_quality
 
 st.set_page_config(page_title="Market Bot Scanner", layout="wide", initial_sidebar_state="collapsed")
 st.markdown("""
@@ -75,6 +76,20 @@ for i, symbol in enumerate(symbols):
         latest = hist.iloc[-1]
         prior = hist.iloc[-2] if len(hist) > 1 else latest
         price = float(latest["Close"])
+        # The timestamp only measures bar age, not the upstream vendor's true exchange latency.
+        bar_timestamp = hist.index[-1].to_pydatetime()
+        quality = check_bar_quality(
+            bar_timestamp,
+            now=datetime.now(bar_timestamp.tzinfo) if bar_timestamp.tzinfo else datetime.now(ZoneInfo("UTC")),
+            max_age_seconds=6.0,
+            price=price,
+            open_price=float(latest["Open"]) if pd.notna(latest["Open"]) else None,
+            high=float(latest["High"]) if pd.notna(latest["High"]) else None,
+            low=float(latest["Low"]) if pd.notna(latest["Low"]) else None,
+            volume=float(latest["Volume"]) if pd.notna(latest["Volume"]) else None,
+        )
+        data_age = quality["age_seconds"]
+        data_quality = "FRESH BAR (not latency-certified)" if quality["ok"] else "CHECK: " + ", ".join(quality["problems"])
         prev_close = info.get("regularMarketPreviousClose") or info.get("previousClose")
         if not prev_close:
             # Fall back to the prior daily close, not the first intraday open.
@@ -105,7 +120,7 @@ for i, symbol in enumerate(symbols):
                   "PRE-HALT WATCH (heuristic)" if prehalt else "Monitoring")
         rows.append({
             "Symbol": symbol, "Price": price, "Change %": change, "Volume": volume,
-            "Float": float_shares, "Country": country, "Status": status,
+            "Float": float_shares, "Country": country, "Status": status,\n            "Bar age (sec)": data_age, "Data quality": data_quality,
             "Price OK": MIN_PRICE <= price <= MAX_PRICE,
             "Volume OK": volume >= MIN_LIQUIDITY,
             "Country OK": not country_unknown and not excluded,
@@ -141,11 +156,11 @@ else:
     left, mid, right = st.columns([1.25, 1.25, 1])
     with left:
         st.subheader("MOMENTUM / GAP SCANNER")
-        show_cols = [c for c in ["Symbol", "Price", "Change %", "Volume", "Float", "Momentum", "Status"] if c in df.columns]
+        show_cols = [c for c in ["Symbol", "Price", "Change %", "Volume", "Float", "Momentum", "Status", "Bar age (sec)", "Data quality"] if c in df.columns]
         movers = df.sort_values("Change %", ascending=False, na_position="last")
         st.dataframe(movers[show_cols], hide_index=True, use_container_width=True, height=300,
                      column_config={"Price": st.column_config.NumberColumn(format="$%.2f"), "Change %": st.column_config.NumberColumn(format="%.2f%%"), "Volume": st.column_config.NumberColumn(format="%d")})
-        st.caption("Gap-up ranking uses the available change field; 1-minute and 15-minute gap rules need reliable intraday reference data.")
+        st.caption("Gap-up ranking uses available change data. Bar age checks do not certify source latency or exchange-wide completeness; Yahoo Finance is not a guaranteed real-time feed.")
     with mid:
         st.subheader("2-MINUTE MOMENTUM UP / DOWN")
         if histories:
