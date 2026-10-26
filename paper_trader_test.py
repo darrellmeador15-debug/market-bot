@@ -1,4 +1,7 @@
 from paper_trader import PaperTrader
+from learning_system import load_memory
+import tempfile
+from pathlib import Path
 
 
 def run_tests():
@@ -58,6 +61,16 @@ def run_tests():
     assert stats["win_rate_percent"] == 100
     assert stats["realized_pnl"] == 10
     assert stats["cash"] == 1010
+
+    with tempfile.TemporaryDirectory() as folder:
+        memory_file = Path(folder) / "trade_memory.jsonl"
+        persistent = PaperTrader(starting_cash=1000, max_position_fraction=1.0,
+                                 memory_path=memory_file)
+        persistent.buy("MEM", 10, shares=10)
+        persistent.sell(11, "MEMORY_TEST")
+        saved = load_memory(memory_file)
+        assert [row["event"] for row in saved] == ["BUY", "SELL"]
+        assert saved[-1]["pnl"] == 10
 
     print("All paper-trader tests passed.")
 
