@@ -2,6 +2,24 @@
 
 Long-only stock scanner and strategy-testing project. The current code includes signal rules, historical-data helpers, strategy tests, and a local simulated paper-trading engine.
 
+## Scanner dashboard prototype
+
+A first single-screen dashboard is available in `dashboard.py`. It includes:
+- Momentum/gap candidate table and configurable ticker list.
+- Top 5 two-minute up/down movers for the selected symbols.
+- News headlines returned by Yahoo Finance for those symbols.
+- Two intraday candlestick/volume charts.
+- A clearly labelled volatility/volume-based pre-halt watch.
+
+Run locally after installing requirements:
+
+```bash
+python -m pip install -r requirements.txt
+streamlit run dashboard.py
+```
+
+**Current limitations:** this first dashboard scans only the symbols entered in its input field; it is not yet a complete market-wide scanner. Yahoo Finance data can be delayed, incomplete, or unavailable for some symbols. The pre-halt label is a heuristic, not an official exchange halt alert. An official halt/resumption feed, reliable real-time data provider, full stock universe, and news catalyst provider still need to be connected. No orders are sent from the dashboard.
+
 ## Safety and current status
 
 - **Local simulator only:** `paper_trader.py` simulates buys and sells using prices supplied to it. It does not send orders to Schwab, Thinkorswim, or Robinhood.
@@ -25,13 +43,14 @@ The tests cover simulated buying and selling, stop/target exits, cash accounting
 ## Data and broker connections still needed
 
 - A verified market-data source and approved credentials are needed before the bot can scan current live prices. The Schwab Trader API offers market-data features when the relevant API access is approved.
-- This repository does not yet implement Schwab OAuth, a streaming feed, a full stock-universe scanner, news ingestion, or a broker execution adapter.
-- Schwab API paper simulation is not the same as Thinkorswim paperMoney. Use this local simulator for automated recorded practice and use Thinkorswim paperMoney separately for manual chart/order practice.
-- A Robinhood version should be a separate broker adapter and configuration, with its own authorization and safeguards. It should first use the same local simulation approach; no Robinhood stock-order connection is implemented here.
+- This repository does not yet implement Schwab OAuth, a streaming feed, a full stock-universe scanner, official halt ingestion, or a broker execution adapter.
+- Schwab API paper simulation is not the same as Thinkorswim paperMoney. Use this local simulator for automated recorded practice and use Thinkorswim paperMoney separately for manual chart/order practice. Direct API access to paperMoney is not assumed or promised.
+- A Robinhood version should be a separate broker adapter and configuration, with its own authorization and safeguards. No Robinhood stock-order connection is implemented here.
 
 ## Strategy goals
 
 - Focus on stocks priced $0.50–$15, with early-momentum setups, volume, catalyst/news data, and price action.
+- Treat the 8-million threshold as traded volume, not float; float remains a separate field/filter.
 - Exclude China/Hong Kong listings when reliable country data is available; unknown country data must not silently pass the exclusion filter.
 - Test the user's preferred 6:00 a.m.–12:00 p.m. and 3:00–6:00 p.m. Eastern windows, with special attention to 6:00–9:00 a.m.
 - Evaluate 7-, 15-, and 30-day results with trade count, win rate, average win/loss, realized P&L, drawdown, and realistic slippage/fees before considering live execution.
@@ -42,7 +61,7 @@ The bot's intended lifecycle is:
 
 1. **Build and observe (initial target: 3 weeks):** connect an approved market-data source, scan the configured stock universe, simulate long-only entries/exits, and record every signal. Three weeks is a checkpoint, not a promise of readiness.
 2. **Validate (typically several additional weeks):** test on unseen historical periods, include realistic fees/slippage, assess drawdown and losing streaks, and publish 7-, 15-, and 30-day scorecards. Do not rely on win rate alone.
-3. **Thinkorswim paperMoney (after a separate integration/feasibility check):** test signals and order-management workflow in the platform's simulated environment. Direct API access to paperMoney is not assumed or promised. Keep testing for at least 4–8 weeks as a starting guideline, and longer if trade count or market conditions are insufficient.
+3. **Thinkorswim paperMoney (after a separate integration/feasibility check):** test signals and order-management workflow in the platform's simulated environment. Keep testing for at least 4–8 weeks as a starting guideline, and longer if trade count or market conditions are insufficient.
 4. **Real money only after explicit approval:** require stable out-of-sample results, adequate trade count, risk-limit checks, a kill switch, and verified broker order behavior. Start with small exposure. Passing software tests alone never authorizes live trading.
 
 ### Trade memory, strategy analysis, and controlled improvement
@@ -51,8 +70,7 @@ The bot's intended lifecycle is:
 - `learning_system_test.py` checks storage, metrics, setup comparisons, insufficient-data status, and safety defaults.
 - Record setup/catalyst and market-regime tags when available, so results can be compared across trending, choppy, and declining markets.
 - The review system **does not automatically rewrite or promote trading rules**. Proposed changes must be tested against data not used to create them and approved by a human before promotion.
-- The learning system can keep reviewing results after deployment, but it only runs when the bot is running and has access to its saved memory. GitHub Actions is for testing, not a continuous live-market process; persistent runtime/storage and a verified data feed remain to be configured.
-- Daily market conditions can be classified and reviewed, but the bot must not assume that yesterday's best strategy is today's best strategy. Keep live settings fixed unless a reviewed change passes validation.
+- GitHub Actions is for testing, not a continuous live-market process; persistent runtime/storage and a verified data feed remain to be configured.
 - No system can promise 100% completion, constant improvement, or profits. Continuous evaluation is the goal; safe, measured changes matter more than changing rules every day.
 
 Run the learning-system tests with:
