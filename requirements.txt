@@ -3,3 +3,5 @@ numpy
 yfinance
 requests
 scikit-learn
+streamlit
+plotly
