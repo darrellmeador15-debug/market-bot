@@ -120,7 +120,8 @@ for i, symbol in enumerate(symbols):
                   "PRE-HALT WATCH (heuristic)" if prehalt else "Monitoring")
         rows.append({
             "Symbol": symbol, "Price": price, "Change %": change, "Volume": volume,
-            "Float": float_shares, "Country": country, "Status": status,\n            "Bar age (sec)": data_age, "Data quality": data_quality,
+            "Float": float_shares, "Country": country, "Status": status,
+            "Bar age (sec)": data_age, "Data quality": data_quality,
             "Price OK": MIN_PRICE <= price <= MAX_PRICE,
             "Volume OK": volume >= MIN_LIQUIDITY,
             "Country OK": not country_unknown and not excluded,
